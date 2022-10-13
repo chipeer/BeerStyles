@@ -1,0 +1,61 @@
+---
+title: "Beer Ranking Study"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+install.packages("dplyr", repos = "http://cran.us.r-project.org")
+install.packages("treemap", repos = "http://cran.us.r-project.org")
+library(tidyverse)
+library(dplyr)
+library(treemap)
+beer <- read.csv("beer_reviews.csv")
+
+```
+
+## The Scenario
+  Lets say you are an entrepreneur with a passion for beer. Before opening a brewery you want to know what types of beer are loved the most. You plan to launch your brewery with a couple of flagship beers and you believe if you appeal to most drinkers you will have a better chance of taking off. Our data set we are working with has over 1.5 Million reviews from Beer Advocate. Lets take a deep dive and answer these questions.
+  * What are the top 5 beers?
+  * What style of beer is the most popular?
+Shoutout to The Devastator for scraping this dataset from Beer Advocate. License [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+  
+## What are the top 5 beers?
+ Right now I want to take the time to make a prediction about what top 5 beers. I believe the top 5 will all be the same style of beer. That would help us right away in deciding what type of beer we should make first. We will only use beers that have at least 5 ratings.
+ 
+```{r Top 5, include=FALSE}
+filtered_beer <- beer %>% 
+    group_by(beer_name, brewery_name, beer_style) %>% 
+    slice_min(beer_name, n =5) %>% 
+    summarise(avg_score = mean(review_taste)) 
+    
+```
+### What did we find? 
+ We found that people really like giving out 5 stars to beer, 468 beers rated 5 stars. Really not what I was expecting. However, I think it will give us good data for what style of beer people like the most out of the 5 star average beers. 
+```{r How many 5 stars, echo=FALSE}
+best_beer <- filtered_beer %>% 
+  group_by(avg_score) %>% 
+  filter(avg_score==5)
+best_beer
+    
+```
+
+## What style of beer is the most popular?
+I am excited to find the answer to this. I believe IPA will be our winner. I took beer rated 5 stars and the beer style had over 10 beers on the list. Assume if it doesn't have "American" as the first word of the beer style that it is American.
+```{r style, echo=FALSE}
+
+beer_styles_list <- c("Altbier", "Adjunct Lager", "Amber Ale", "Amber Lager", "Barleywine", "Black Ale", "Blonde Ale", "Brown Ale", "Dark Wheat Ale", "Imperial IPA", "Imperial Pilsner", "Imperial Stout", "IPA", "Pale Ale", "Pale Wheat Ale", "Porter", "Stout", "Strong Ale", "Wild Ale", "Baltic Porter", "Belgian Dark Ale", "Belgian IPA", "Belgian Pale Ale", "Belgian Strong Dark Ale", "Belgian Strong Pale Ale", "Berliner Weissbier", "Bock", "California Common / Steam Beer", "Chile Beer", "Cream Ale", "Czech Pilsener", "Dopplebock", "Dubbel", "Dunkelweizen", "Eisbock", "English Barleywine", "English Bitter", "English Brown Ale", "English Dark Mild Ale", "English IPA", "English Pale Ale", "English Pale Mild Ale", "English Porter", "English Strong Ale", "Euro Dark Lager", "Euro Pale Lager", "Strong Bitter (ESB)", "Flanders Oud Bruin", "Flanders Red Ale", "Fruit / Vegetable Beer", "German Pilsener", "Gueuze", "Hefeweizen", "Herbed / Spiced Beer", "Irish Dry Stout", "Irish Red Ale", "Keller Bier / Zwickel Bier", "Kolsch", "Lambic-Fruit", "Light Lager", "Low Alcohol Beer", "Maibock / Helles Bock", "Marzen / Oktoberfest", "Milk / Sweet Stout", "Munich Helles Lager", "Oatmeal Stout", "Old Ale", "Pumpkin Ale", "Quadrupel", "Rauchbier", "Russian Imperial Stout", "Rye Beer", "Saison / Farmhouse Ale", "Schwarzbier", "Scotch Ale / Wee Heavy", "Scottish Ale", "Scottish Gruit / Ancient Herbed Ale", "Smoked Beer", "Tripel", "Weizenbock", "Wheatwine", "Winter Warmer", "Witbier")
+num_of_times_fav <- c(2, 1, 17, 2, 23, 6, 2, 11, 1, 9, 2, 22, 28, 14, 5, 11, 12, 8, 12, 5, 2, 3, 4, 8, 9, 1, 6, 4, 1, 1, 4, 9, 2, 1, 1, 9, 6, 6, 2, 3, 2, 3, 9, 2, 1, 4, 5, 1, 3, 8, 4, 1, 13, 7, 4, 8, 1, 1, 3, 1, 1, 2, 7, 9, 2, 11, 5, 6, 2, 1, 15, 2, 8, 4, 9, 4, 1, 3, 7, 3, 2, 5, 3)
+bs_occurances <- data.frame(beer_styles_list, num_of_times_fav)
+
+final_countdown <- bs_occurances %>% 
+  filter(num_of_times_fav >10)
+ggplot(final_countdown, aes(beer_styles_list, num_of_times_fav)) +
+  geom_point(aes(color = beer_styles_list, size= num_of_times_fav))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ggtitle("Favorite Beer Style")+
+  xlab("Beer Stlye") + ylab("Count")+
+  guides(size= "none", color = "none")
+
+```
